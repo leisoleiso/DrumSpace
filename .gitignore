@@ -27,3 +27,6 @@ copy_log.txt
 copy_vst3.ps1
 hashcheck.ps1
 hashcheck.txt
+
+# Release packaging output — goes to GitHub Releases, not the repo
+release/
