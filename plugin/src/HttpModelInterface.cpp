@@ -35,24 +35,34 @@ juce::var HttpModelInterface::postJson(const juce::String& path, const juce::var
     juce::URL url(baseUrl_ + path);
     url = url.withPOSTData(body);
 
-    auto stream = url.createInputStream(
-        juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inPostData)
-            .withConnectionTimeoutMs(30000)
-            .withExtraHeaders("Content-Type: application/json"));
+    // The local server may still be loading its model when the plugin first
+    // requests it.  Retry connection failures for up to 60 s so the first
+    // encode/decode doesn't fail.
+    const int maxAttempts = 30;
+    for (int attempt = 1; attempt <= maxAttempts; ++attempt) {
+        auto stream = url.createInputStream(
+            juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inPostData)
+                .withConnectionTimeoutMs(3000)
+                .withExtraHeaders("Content-Type: application/json"));
 
-    if (stream == nullptr)
-        throw std::runtime_error("HTTP request failed: " + (baseUrl_ + path).toStdString());
+        if (stream != nullptr) {
+            const juce::String response = stream->readEntireStreamAsString();
+            juce::var parsed = juce::JSON::parse(response);
+            if (parsed.isVoid())
+                throw std::runtime_error("bad JSON from server");
 
-    const juce::String response = stream->readEntireStreamAsString();
-    juce::var parsed = juce::JSON::parse(response);
-    if (parsed.isVoid())
-        throw std::runtime_error("bad JSON from server");
+            if (auto* obj = parsed.getDynamicObject())
+                if (obj->hasProperty("error"))
+                    throw std::runtime_error(obj->getProperty("error").toString().toStdString());
 
-    if (auto* obj = parsed.getDynamicObject())
-        if (obj->hasProperty("error"))
-            throw std::runtime_error(obj->getProperty("error").toString().toStdString());
+            return parsed;
+        }
 
-    return parsed;
+        if (attempt < maxAttempts)
+            juce::Thread::sleep(2000);
+    }
+
+    throw std::runtime_error("HTTP request failed: " + (baseUrl_ + path).toStdString());
 }
 
 LatentVector HttpModelInterface::encode(const std::vector<NoteEvent>& notes) {

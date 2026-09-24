@@ -537,7 +537,7 @@ void DrumSpaceAudioProcessorEditor::applyAndPlay() {
         return;
     currentResult_ = controls_.apply(lastRawResult_);
     resultLabel_.setText(notesToString(currentResult_), juce::dontSendNotification);
-    processor_.setResult(currentResult_, 120.0);
+    processor_.setResult(currentResult_, processor_.getBpm());   // follow host tempo
 }
 
 void DrumSpaceAudioProcessorEditor::addResultAsNode() {
