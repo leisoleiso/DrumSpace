@@ -1,0 +1,29 @@
+# Build output
+build/
+plugin/build/
+**/build/
+
+# PyInstaller
+server/build/
+server/dist/
+*.spec.bak
+
+# Bundled server executable (300MB) — users download it from Releases
+drumspace_server.exe
+
+# Model weights (53MB) — download from the URL in BUILD.md
+checkpoints/*.ckpt.data-*
+checkpoints/*.ckpt.index
+checkpoints/*.tar
+
+# IDE
+.vs/
+*.user
+CMakeCache.txt
+CMakeFiles/
+
+# Temp / installer scratch files
+copy_log.txt
+copy_vst3.ps1
+hashcheck.ps1
+hashcheck.txt
